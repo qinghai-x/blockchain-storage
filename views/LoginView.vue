@@ -12,9 +12,10 @@
           <el-form-item prop="username">
             <el-input 
               v-model="loginForm.username" 
-              placeholder="用户名"
+              placeholder="请输入用户名"
               :prefix-icon="User"
               size="large"
+              clearable
             />
           </el-form-item>
           
@@ -22,10 +23,11 @@
             <el-input 
               v-model="loginForm.password" 
               type="password"
-              placeholder="密码"
+              placeholder="请输入密码"
               :prefix-icon="Lock"
               size="large"
               show-password
+              @keyup.enter="handleLogin"
             />
           </el-form-item>
   
@@ -36,7 +38,7 @@
             :loading="loading"
             style="width: 100%; margin-top: 20px;"
           >
-            登录
+            {{ loading ? '登录中...' : '登录' }}
           </el-button>
         </el-form>
   

@@ -107,10 +107,8 @@ export const login = async (payload: AuthPayload): Promise<AuthResponse> => {
     throw new Error('密码错误，请重试')
   }
 
-  // 公钥验证改为可选，如果用户有公钥且提供了公钥，则验证；否则跳过
-  if (user.publicKey && payload.publicKey && user.publicKey !== payload.publicKey) {
-    throw new Error('公钥不匹配，请核对后再试')
-  }
+  // 登录时只需要验证用户名和密码，不需要公钥验证
+  // 公钥仅用于注册时的可选安全增强，不影响登录流程
 
   const token = `token-${generateId()}-${Date.now()}`
 
