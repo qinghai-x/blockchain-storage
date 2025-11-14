@@ -127,9 +127,37 @@ const handleRegister = async () => {
   margin-top: 12px;
 }
 
+/* 表单标签颜色加深 */
+:deep(.el-form-item__label) {
+  color: #303133 !important;
+  font-weight: 600;
+}
+
+/* 输入框占位符颜色加深 */
+:deep(.el-input__inner::placeholder) {
+  color: #606266 !important;
+  opacity: 1;
+}
+
+:deep(.el-input__inner::-webkit-input-placeholder) {
+  color: #606266 !important;
+  opacity: 1;
+}
+
+:deep(.el-input__inner::-moz-placeholder) {
+  color: #606266 !important;
+  opacity: 1;
+}
+
+:deep(.el-input__inner:-ms-input-placeholder) {
+  color: #606266 !important;
+  opacity: 1;
+}
+
+/* 提示文字颜色加深 */
 .form-tip {
   font-size: 12px;
-  color: #606266;
+  color: #303133;
   margin-top: 4px;
   line-height: 1.4;
   font-weight: 500;
