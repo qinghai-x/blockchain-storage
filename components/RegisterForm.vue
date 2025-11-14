@@ -129,8 +129,9 @@ const handleRegister = async () => {
 
 .form-tip {
   font-size: 12px;
-  color: #909399;
+  color: #606266;
   margin-top: 4px;
   line-height: 1.4;
+  font-weight: 500;
 }
 </style>

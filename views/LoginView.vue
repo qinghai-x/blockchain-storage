@@ -236,7 +236,8 @@
   
   .register-header p {
     margin: 0;
-    color: #666;
+    color: #404040;
     font-size: 14px;
+    font-weight: 500;
   }
   </style>
