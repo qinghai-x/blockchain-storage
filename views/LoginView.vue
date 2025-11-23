@@ -185,59 +185,143 @@
   <style scoped>
   .login-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background-size: 200% 200%;
+    animation: gradientShift 15s ease infinite;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .login-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
   }
   
   .login-card {
     width: 100%;
-    max-width: 400px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s;
+  }
+
+  .login-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+  }
+
+  :deep(.el-card__header) {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 20px 20px 0 0;
+    padding: 24px;
   }
   
   .login-header {
     text-align: center;
-    color: #333;
+    color: #1e293b;
   }
   
   .login-header h2 {
-    margin: 0 0 8px 0;
-    font-size: 24px;
+    margin: 0 0 10px 0;
+    font-size: 26px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   
   .login-header p {
     margin: 0;
-    color: #666;
-    font-size: 14px;
+    color: #64748b;
+    font-size: 15px;
+    font-weight: 500;
   }
   
   .login-footer {
     text-align: center;
-    margin-top: 20px;
-    color: #666;
+    margin-top: 24px;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  :deep(.el-link) {
+    font-weight: 600;
   }
   
   .register-section {
-    padding: 20px 0;
+    padding: 24px 0;
   }
   
   .register-header {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
   
   .register-header h2 {
-    margin: 0 0 8px 0;
-    color: #333;
+    margin: 0 0 10px 0;
+    color: #1e293b;
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   
   .register-header p {
     margin: 0;
     color: #404040;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
+  }
+
+  :deep(.el-button--primary) {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    transition: all 0.3s;
+    font-weight: 600;
+  }
+
+  :deep(.el-button--primary:hover) {
+    background: linear-gradient(135deg, #5855eb 0%, #7c3aed 100%);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    transform: translateY(-2px);
+  }
+
+  :deep(.el-input__inner) {
+    border-radius: 12px;
+    border-color: rgba(99, 102, 241, 0.2);
+    transition: all 0.3s;
+  }
+
+  :deep(.el-input__inner:focus) {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
   }
   </style>

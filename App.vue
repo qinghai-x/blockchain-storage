@@ -175,12 +175,15 @@
   <style scoped>
   .layout-container {
     height: 100vh;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   }
   
   .layout-header {
-    background: #fff;
-    border-bottom: 1px solid #e6e6e6;
-    padding: 0 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+    padding: 0 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(10px);
   }
   
   .header-content {
@@ -188,18 +191,26 @@
     align-items: center;
     justify-content: space-between;
     height: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
   }
   
 .logo {
   display: flex;
   align-items: center;
   gap: 12px;
+  transition: transform 0.3s;
+}
+
+.logo:hover {
+  transform: scale(1.02);
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.2));
 }
 
 .logo-text {
@@ -208,15 +219,38 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
   white-space: nowrap;
+  letter-spacing: 0.5px;
 }
   
   .nav-menu {
     flex: 1;
     display: flex;
     justify-content: center;
+  }
+
+  :deep(.el-menu) {
+    background: transparent;
+    border-bottom: none;
+  }
+
+  :deep(.el-menu-item) {
+    color: #475569;
+    font-weight: 500;
+    transition: all 0.3s;
+  }
+
+  :deep(.el-menu-item:hover) {
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.08);
+  }
+
+  :deep(.el-menu-item.is-active) {
+    color: #6366f1;
+    border-bottom-color: #6366f1;
+    font-weight: 600;
   }
   
   .user-info {
@@ -227,19 +261,24 @@
   .user-dropdown {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: background-color 0.3s;
+    padding: 8px 16px;
+    border-radius: 10px;
+    transition: all 0.3s;
+    color: #334155;
+    font-weight: 500;
   }
   
   .user-dropdown:hover {
-    background-color: #f5f7fa;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    color: #6366f1;
+    transform: translateY(-1px);
   }
   
   .layout-main {
-    background-color: #f5f7fa;
-    padding: 20px;
+    background: transparent;
+    padding: 24px;
+    overflow-y: auto;
   }
   </style>

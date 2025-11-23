@@ -458,13 +458,33 @@ const formatFileSize = (bytes: number) => {
 
 <style scoped>
 .profile-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
 .page-header {
   padding-left: 0;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+}
+
+:deep(.el-card) {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.08);
+  transition: all 0.3s;
+}
+
+:deep(.el-card:hover) {
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12);
+  transform: translateY(-2px);
+}
+
+:deep(.el-card__header) {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+  padding: 20px 24px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .profile-card {
@@ -472,27 +492,41 @@ const formatFileSize = (bytes: number) => {
 }
 
 .avatar-section {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .user-avatar {
-  margin-bottom: 15px;
-  border: 3px solid #409eff;
+  margin-bottom: 16px;
+  border: 4px solid;
+  border-image: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899) 1;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
+  transition: transform 0.3s;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
 }
 
 .avatar-actions {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .user-basic-info h2 {
-  margin: 15px 0 10px 0;
-  color: #303133;
+  margin: 16px 0 12px 0;
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .user-basic-info .register-time {
-  margin-top: 10px;
-  color: #909399;
+  margin-top: 12px;
+  color: #64748b;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .stats-card {
@@ -502,23 +536,27 @@ const formatFileSize = (bytes: number) => {
 .stats-content {
   display: flex;
   justify-content: space-around;
-  padding: 20px 0;
+  padding: 24px 0;
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .stat-label {
-  color: #909399;
+  color: #64748b;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .stat-value {
-  color: #409eff;
-  font-size: 24px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 28px;
   font-weight: 700;
 }
 
@@ -526,6 +564,19 @@ const formatFileSize = (bytes: number) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transition: all 0.3s;
+}
+
+:deep(.el-button--primary:hover) {
+  background: linear-gradient(135deg, #5855eb 0%, #7c3aed 100%);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  transform: translateY(-2px);
 }
 
 .avatar-uploader {
@@ -592,15 +643,44 @@ const formatFileSize = (bytes: number) => {
 
 .username-display {
   margin: 8px 0;
-  color: #909399;
+  color: #64748b;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .form-tip {
   font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
-  line-height: 1.4;
+  color: #64748b;
+  margin-top: 6px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+:deep(.el-form-item__label) {
+  color: #334155;
+  font-weight: 600;
+}
+
+:deep(.el-input__inner) {
+  border-radius: 10px;
+  border-color: rgba(99, 102, 241, 0.2);
+  transition: all 0.3s;
+}
+
+:deep(.el-input__inner:focus) {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+:deep(.el-textarea__inner) {
+  border-radius: 10px;
+  border-color: rgba(99, 102, 241, 0.2);
+  transition: all 0.3s;
+}
+
+:deep(.el-textarea__inner:focus) {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 </style>
 
