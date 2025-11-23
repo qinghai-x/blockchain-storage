@@ -185,7 +185,7 @@
   <style scoped>
   .login-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #14b8a6 100%);
     background-size: 200% 200%;
     animation: gradientShift 15s ease infinite;
     display: flex;
@@ -210,19 +210,19 @@
     right: 0;
     bottom: 0;
     background: 
-      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
     pointer-events: none;
   }
   
   .login-card {
     width: 100%;
-    max-width: 440px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95);
+    max-width: 460px;
+    box-shadow: 0 24px 64px rgba(14, 165, 233, 0.25);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.98);
     position: relative;
     z-index: 1;
     transition: transform 0.3s;
@@ -230,26 +230,26 @@
 
   .login-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 32px 80px rgba(14, 165, 233, 0.3);
   }
 
   :deep(.el-card__header) {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
-    border-radius: 20px 20px 0 0;
-    padding: 24px;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%);
+    border-bottom: 1px solid rgba(14, 165, 233, 0.15);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: 28px;
   }
   
   .login-header {
     text-align: center;
-    color: #1e293b;
+    color: var(--text-primary);
   }
   
   .login-header h2 {
-    margin: 0 0 10px 0;
-    font-size: 26px;
+    margin: 0 0 12px 0;
+    font-size: 28px;
     font-weight: 700;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -257,37 +257,38 @@
   
   .login-header p {
     margin: 0;
-    color: #64748b;
+    color: var(--text-secondary);
     font-size: 15px;
     font-weight: 500;
   }
   
   .login-footer {
     text-align: center;
-    margin-top: 24px;
-    color: #64748b;
+    margin-top: 28px;
+    color: var(--text-secondary);
     font-weight: 500;
   }
 
   :deep(.el-link) {
     font-weight: 600;
+    color: var(--primary-color);
   }
   
   .register-section {
-    padding: 24px 0;
+    padding: 28px 0;
   }
   
   .register-header {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
   }
   
   .register-header h2 {
-    margin: 0 0 10px 0;
-    color: #1e293b;
-    font-size: 24px;
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+    font-size: 26px;
     font-weight: 700;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -295,33 +296,33 @@
   
   .register-header p {
     margin: 0;
-    color: #404040;
+    color: var(--text-secondary);
     font-size: 15px;
     font-weight: 500;
   }
 
   :deep(.el-button--primary) {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: var(--gradient-primary);
     border: none;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35);
     transition: all 0.3s;
     font-weight: 600;
   }
 
   :deep(.el-button--primary:hover) {
-    background: linear-gradient(135deg, #5855eb 0%, #7c3aed 100%);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    background: linear-gradient(135deg, #0284c7 0%, #0891b2 100%);
+    box-shadow: 0 6px 24px rgba(14, 165, 233, 0.45);
     transform: translateY(-2px);
   }
 
   :deep(.el-input__inner) {
-    border-radius: 12px;
-    border-color: rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius);
+    border-color: rgba(14, 165, 233, 0.2);
     transition: all 0.3s;
   }
 
   :deep(.el-input__inner:focus) {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
   }
   </style>

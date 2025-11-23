@@ -7,11 +7,11 @@
             <svg class="logo-icon" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
               <!-- 区块链链环 -->
               <g id="blockchain">
-                <circle cx="30" cy="30" r="12" fill="none" stroke="#6366f1" stroke-width="3" opacity="0.8"/>
-                <circle cx="60" cy="30" r="12" fill="none" stroke="#8b5cf6" stroke-width="3" opacity="0.8"/>
-                <circle cx="90" cy="30" r="12" fill="none" stroke="#ec4899" stroke-width="3" opacity="0.8"/>
-                <line x1="42" y1="30" x2="48" y2="30" stroke="#6366f1" stroke-width="2" opacity="0.6"/>
-                <line x1="72" y1="30" x2="78" y2="30" stroke="#8b5cf6" stroke-width="2" opacity="0.6"/>
+                <circle cx="30" cy="30" r="12" fill="none" stroke="#0ea5e9" stroke-width="3" opacity="0.8"/>
+                <circle cx="60" cy="30" r="12" fill="none" stroke="#06b6d4" stroke-width="3" opacity="0.8"/>
+                <circle cx="90" cy="30" r="12" fill="none" stroke="#14b8a6" stroke-width="3" opacity="0.8"/>
+                <line x1="42" y1="30" x2="48" y2="30" stroke="#0ea5e9" stroke-width="2" opacity="0.6"/>
+                <line x1="72" y1="30" x2="78" y2="30" stroke="#06b6d4" stroke-width="2" opacity="0.6"/>
               </g>
               <!-- 云存储图标 -->
               <g id="cloud">
@@ -19,16 +19,16 @@
                       fill="url(#cloudGradient)" opacity="0.9"/>
                 <defs>
                   <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-                    <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+                    <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#06b6d4;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#14b8a6;stop-opacity:1" />
                   </linearGradient>
                 </defs>
               </g>
               <!-- 连接线 -->
               <g id="connection">
-                <line x1="60" y1="42" x2="60" y2="58" stroke="#fbbf24" stroke-width="2" opacity="0.7"/>
-                <circle cx="60" cy="50" r="3" fill="#fbbf24" opacity="0.8"/>
+                <line x1="60" y1="42" x2="60" y2="58" stroke="#f59e0b" stroke-width="2" opacity="0.7"/>
+                <circle cx="60" cy="50" r="3" fill="#f59e0b" opacity="0.8"/>
               </g>
             </svg>
             <h2 class="logo-text">区块链云存储系统</h2>
@@ -175,15 +175,18 @@
   <style scoped>
   .layout-container {
     height: 100vh;
-    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    background: var(--gradient-bg);
   }
   
   .layout-header {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border-bottom: 1px solid rgba(99, 102, 241, 0.1);
-    padding: 0 24px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 32px;
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
   }
   
   .header-content {
@@ -215,11 +218,11 @@
 
 .logo-text {
   margin: 0;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 700;
   white-space: nowrap;
   letter-spacing: 0.5px;
@@ -237,20 +240,23 @@
   }
 
   :deep(.el-menu-item) {
-    color: #475569;
+    color: var(--text-secondary);
     font-weight: 500;
     transition: all 0.3s;
+    border-radius: var(--radius);
+    margin: 0 4px;
   }
 
   :deep(.el-menu-item:hover) {
-    color: #6366f1;
-    background: rgba(99, 102, 241, 0.08);
+    color: var(--primary-color);
+    background: rgba(14, 165, 233, 0.08);
   }
 
   :deep(.el-menu-item.is-active) {
-    color: #6366f1;
-    border-bottom-color: #6366f1;
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
     font-weight: 600;
+    background: rgba(14, 165, 233, 0.05);
   }
   
   .user-info {
@@ -261,24 +267,27 @@
   .user-dropdown {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     cursor: pointer;
-    padding: 8px 16px;
-    border-radius: 10px;
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
     transition: all 0.3s;
-    color: #334155;
+    color: var(--text-primary);
     font-weight: 500;
+    border: 1px solid var(--border-color);
   }
   
   .user-dropdown:hover {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-    color: #6366f1;
+    background: var(--bg-hover);
+    color: var(--primary-color);
+    border-color: var(--primary-light);
     transform: translateY(-1px);
+    box-shadow: var(--shadow);
   }
   
   .layout-main {
     background: transparent;
-    padding: 24px;
+    padding: 32px;
     overflow-y: auto;
   }
   </style>

@@ -166,14 +166,14 @@ const securityCards = computed(() => {
       title: '加密级别', 
       value: encryptionLevel, 
       description: blockchainFiles > 0 ? `${blockchainFiles} 个文件已上链` : '标准加密保护',
-      gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)' 
+      gradient: 'linear-gradient(135deg,#0ea5e9,#06b6d4)' 
     },
     { 
       icon: '🛡️', 
       title: '安全事件', 
       value: formatNumber(securityEvents), 
       description: eventDesc,
-      gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)' 
+      gradient: 'linear-gradient(135deg,#06b6d4,#14b8a6)' 
     },
     { 
       icon: '🔍', 
@@ -321,21 +321,23 @@ window.addEventListener('auth-change', () => {
 }
 
 :deep(.el-card) {
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(99, 102, 241, 0.08);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
   transition: all 0.3s;
+  background: var(--bg-card);
 }
 
 :deep(.el-card:hover) {
-  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
+  border-color: var(--primary-light);
 }
 
 :deep(.el-card__header) {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
-  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
-  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);
+  border-bottom: 1px solid var(--border-color);
+  padding: 24px 28px;
 }
 
 .summary-card {
@@ -397,32 +399,32 @@ window.addEventListener('auth-change', () => {
 
 .card-header {
   font-weight: 700;
-  font-size: 18px;
-  color: #1e293b;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  font-size: 20px;
+  color: var(--text-primary);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .policy-card {
-  margin-bottom: 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(99, 102, 241, 0.1);
+  margin-bottom: 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
   transition: all 0.3s;
 }
 
 .policy-card:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1);
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow);
 }
 
 .policy-card h3 {
-  margin-bottom: 14px;
-  color: #1e293b;
-  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  font-size: 19px;
   font-weight: 700;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -441,7 +443,7 @@ window.addEventListener('auth-change', () => {
 }
 
 .policy-card li::marker {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 :deep(.el-timeline-item__timestamp) {

@@ -208,26 +208,28 @@
   
   <style scoped>
   .storage-container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
   }
 
   :deep(.el-card) {
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-    border: 1px solid rgba(99, 102, 241, 0.08);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
     transition: all 0.3s;
+    background: var(--bg-card);
   }
 
   :deep(.el-card:hover) {
-    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
+    border-color: var(--primary-light);
   }
 
   :deep(.el-card__header) {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
-    border-bottom: 1px solid rgba(99, 102, 241, 0.1);
-    padding: 20px 24px;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 24px 28px;
   }
   
   .card-header {
@@ -238,100 +240,101 @@
 
   .card-header h3 {
     margin: 0;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   :deep(.el-button--primary) {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: var(--gradient-primary);
     border: none;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    box-shadow: var(--shadow);
     transition: all 0.3s;
   }
 
   :deep(.el-button--primary:hover) {
-    background: linear-gradient(135deg, #5855eb 0%, #7c3aed 100%);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    background: linear-gradient(135deg, #0284c7 0%, #0891b2 100%);
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
   }
 
   :deep(.el-table) {
-    border-radius: 12px;
+    border-radius: var(--radius);
     overflow: hidden;
   }
 
   :deep(.el-table__header) {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.04) 0%, rgba(6, 182, 212, 0.04) 100%);
   }
 
   :deep(.el-table th) {
     background: transparent;
-    color: #475569;
+    color: var(--text-primary);
     font-weight: 600;
-    border-bottom: 2px solid rgba(99, 102, 241, 0.1);
+    border-bottom: 2px solid var(--border-color);
   }
 
   :deep(.el-table td) {
-    border-bottom: 1px solid rgba(99, 102, 241, 0.05);
+    border-bottom: 1px solid var(--border-light);
   }
 
   :deep(.el-table__row:hover) {
-    background: rgba(99, 102, 241, 0.04);
+    background: rgba(14, 165, 233, 0.03);
   }
   
   .file-info {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
   }
   
   .file-icon {
-    font-size: 24px;
-    color: #6366f1;
-    filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.2));
+    font-size: 26px;
+    color: var(--primary-color);
+    filter: drop-shadow(0 2px 4px rgba(14, 165, 233, 0.2));
   }
   
   .file-details {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
   
   .file-name {
     font-weight: 600;
-    color: #1e293b;
-    font-size: 15px;
+    color: var(--text-primary);
+    font-size: 16px;
     transition: color 0.3s;
   }
 
   .file-name:hover {
-    color: #6366f1;
+    color: var(--primary-color);
   }
   
   .file-meta {
-    font-size: 12px;
-    color: #64748b;
+    font-size: 13px;
+    color: var(--text-tertiary);
     font-weight: 500;
   }
   
   .hash-text {
     font-family: 'Courier New', monospace;
-    color: #10b981;
+    color: var(--success-color);
     cursor: pointer;
     font-weight: 500;
-    transition: color 0.3s;
-    padding: 4px 8px;
-    border-radius: 6px;
+    transition: all 0.3s;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
     background: rgba(16, 185, 129, 0.08);
   }
 
   .hash-text:hover {
     color: #059669;
     background: rgba(16, 185, 129, 0.12);
+    transform: translateY(-1px);
   }
 
   :deep(.el-tag) {

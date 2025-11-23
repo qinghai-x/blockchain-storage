@@ -458,33 +458,35 @@ const formatFileSize = (bytes: number) => {
 
 <style scoped>
 .profile-container {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
 .page-header {
   padding-left: 0;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 :deep(.el-card) {
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(99, 102, 241, 0.08);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
   transition: all 0.3s;
+  background: var(--bg-card);
 }
 
 :deep(.el-card:hover) {
-  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
+  border-color: var(--primary-light);
 }
 
 :deep(.el-card__header) {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
-  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
-  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);
+  border-bottom: 1px solid var(--border-color);
+  padding: 24px 28px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .profile-card {
@@ -496,10 +498,10 @@ const formatFileSize = (bytes: number) => {
 }
 
 .user-avatar {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   border: 4px solid;
-  border-image: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899) 1;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
+  border-image: var(--gradient-primary) 1;
+  box-shadow: var(--shadow-md);
   transition: transform 0.3s;
 }
 
@@ -508,23 +510,23 @@ const formatFileSize = (bytes: number) => {
 }
 
 .avatar-actions {
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .user-basic-info h2 {
-  margin: 16px 0 12px 0;
-  color: #1e293b;
-  font-size: 24px;
+  margin: 18px 0 14px 0;
+  color: var(--text-primary);
+  font-size: 26px;
   font-weight: 700;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .user-basic-info .register-time {
-  margin-top: 12px;
-  color: #64748b;
+  margin-top: 14px;
+  color: var(--text-tertiary);
   font-size: 14px;
   font-weight: 500;
 }
@@ -546,17 +548,17 @@ const formatFileSize = (bytes: number) => {
 }
 
 .stat-label {
-  color: #64748b;
+  color: var(--text-tertiary);
   font-size: 14px;
   font-weight: 500;
 }
 
 .stat-value {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
 }
 
@@ -567,15 +569,15 @@ const formatFileSize = (bytes: number) => {
 }
 
 :deep(.el-button--primary) {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: var(--gradient-primary);
   border: none;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--shadow);
   transition: all 0.3s;
 }
 
 :deep(.el-button--primary:hover) {
-  background: linear-gradient(135deg, #5855eb 0%, #7c3aed 100%);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, #0284c7 0%, #0891b2 100%);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
@@ -657,30 +659,30 @@ const formatFileSize = (bytes: number) => {
 }
 
 :deep(.el-form-item__label) {
-  color: #334155;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
 :deep(.el-input__inner) {
-  border-radius: 10px;
-  border-color: rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius);
+  border-color: var(--border-color);
   transition: all 0.3s;
 }
 
 :deep(.el-input__inner:focus) {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
 :deep(.el-textarea__inner) {
-  border-radius: 10px;
-  border-color: rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius);
+  border-color: var(--border-color);
   transition: all 0.3s;
 }
 
 :deep(.el-textarea__inner:focus) {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 </style>
 
