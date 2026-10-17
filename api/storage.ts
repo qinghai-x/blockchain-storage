@@ -155,7 +155,7 @@ export const uploadFile = async (payload: UploadPayload): Promise<StorageRespons
     if (insertError) {
       // 记录写入失败时回滚已上传的对象
       await supabase.storage.from('user-files').remove([storagePath])
-      return { success: false, message: '文件记录保存失败，请重试' }
+      return { success: false, message: `文件记录保存失败：${insertError.message}` }
     }
 
     return { success: true, data: toSummary(inserted) }
