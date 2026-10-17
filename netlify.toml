@@ -5,6 +5,26 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Supabase 同域代理：前端经本域转发到 Supabase，绕开部分网络无法直连 supabase.co 的问题
+# 注意：代理规则必须放在 SPA 回退规则之前
+[[redirects]]
+  from = "/auth/v1/*"
+  to = "https://jucuyjdoisfmgzhtcrux.supabase.co/auth/v1/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/rest/v1/*"
+  to = "https://jucuyjdoisfmgzhtcrux.supabase.co/rest/v1/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/storage/v1/*"
+  to = "https://jucuyjdoisfmgzhtcrux.supabase.co/storage/v1/:splat"
+  status = 200
+  force = true
+
 # 单页应用路由配置
 [[redirects]]
   from = "/*"

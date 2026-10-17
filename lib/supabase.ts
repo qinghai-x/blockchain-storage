@@ -7,8 +7,14 @@ import { createClient } from '@supabase/supabase-js'
  *   VITE_SUPABASE_URL=你的项目 URL（形如 https://xxxx.supabase.co）
  *   VITE_SUPABASE_ANON_KEY=你的 anon public key
  * 配置完成后，Vite 会在构建时自动注入，无需修改本文件。
+ *
+ * 生产环境走 Netlify 同域代理（/auth/v1、/rest/v1、/storage/v1 → supabase.co，
+ * 见 netlify.toml），绕开部分地区网络无法直连 supabase.co 的问题；
+ * 本地开发（npm run dev）仍直连 Supabase。
  */
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
+const rawUrl = import.meta.env.VITE_SUPABASE_URL as string
+const isDev = import.meta.env.DEV
+const supabaseUrl = isDev ? rawUrl || 'https://placeholder.supabase.co' : window.location.origin
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
