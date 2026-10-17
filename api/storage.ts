@@ -114,10 +114,13 @@ export const uploadFile = async (payload: UploadPayload): Promise<StorageRespons
       return { success: false, message: '该文件已上传，无需重复上传' }
     }
 
-    // 存储路径：{userId}/{uuid}-{安全文件名}，天然按用户隔离
-    // Supabase Storage 对 key 有字符限制（空格等特殊字符会报 Invalid key），需清理文件名
-    const safeFileName = payload.file.name.replace(/[^\w.\-\u4e00-\u9fa5]/g, '_')
-    const storagePath = `${userId}/${crypto.randomUUID()}-${safeFileName}`
+    // 存储路径：{userId}/{uuid}.{扩展名}
+    // Supabase Storage 对 key 严格限制为 S3 安全字符集（仅 ASCII），
+    // 中文/空格等非 ASCII 字符会被拒绝并报 Invalid key。
+    // 因此存储 key 使用纯 ASCII 的 UUID + 扩展名，原文件名仅保存在 files 表元数据中用于展示。
+    const extMatch = payload.file.name.match(/\.([a-zA-Z0-9]+)$/)
+    const safeKeyName = `${crypto.randomUUID()}.${extMatch ? extMatch[1].toLowerCase() : 'bin'}`
+    const storagePath = `${userId}/${safeKeyName}`
     const { error: uploadError } = await supabase.storage.from('user-files').upload(storagePath, payload.file, {
       contentType: payload.file.type || 'application/octet-stream',
       upsert: false
