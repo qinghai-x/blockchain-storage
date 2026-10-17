@@ -114,8 +114,10 @@ export const uploadFile = async (payload: UploadPayload): Promise<StorageRespons
       return { success: false, message: '该文件已上传，无需重复上传' }
     }
 
-    // 存储路径：{userId}/{uuid}-{原文件名}，天然按用户隔离
-    const storagePath = `${userId}/${crypto.randomUUID()}-${payload.file.name}`
+    // 存储路径：{userId}/{uuid}-{安全文件名}，天然按用户隔离
+    // Supabase Storage 对 key 有字符限制（空格等特殊字符会报 Invalid key），需清理文件名
+    const safeFileName = payload.file.name.replace(/[^\w.\-\u4e00-\u9fa5]/g, '_')
+    const storagePath = `${userId}/${crypto.randomUUID()}-${safeFileName}`
     const { error: uploadError } = await supabase.storage.from('user-files').upload(storagePath, payload.file, {
       contentType: payload.file.type || 'application/octet-stream',
       upsert: false
