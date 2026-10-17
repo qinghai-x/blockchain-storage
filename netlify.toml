@@ -40,4 +40,5 @@
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
     # connect-src 已加入 https://*.supabase.co：接入 Supabase 后前端需向该域名发起 API 请求
-    Content-Security-Policy = "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co"
+    # media-src / frame-src 放行 data: blob:：文件在线预览（视频/音频/PDF）使用 data URL
+    Content-Security-Policy = "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; frame-src 'self' data:; img-src 'self' data: https:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co"

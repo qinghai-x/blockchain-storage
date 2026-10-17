@@ -10,6 +10,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 interface UploadPayload {
   file: File
   description?: string
+  folderId?: string | null
 }
 
 interface StoredFile {
@@ -24,10 +25,19 @@ interface StoredFile {
   mimeType: string
   description?: string
   storagePath: string
+  folderId?: string | null
 }
 
 // 返回给前端的摘要（不含内部存储路径）
 export type StoredFileSummary = Omit<StoredFile, 'storagePath'>
+
+// 文件夹
+export interface Folder {
+  id: string
+  name: string
+  parentId: string | null
+  createdAt: string
+}
 
 interface StorageResponse<T> {
   success: boolean
@@ -46,7 +56,8 @@ const toSummary = (row: any): StoredFileSummary => ({
   uploadTime: row.upload_time,
   status: row.status,
   mimeType: row.mime_type,
-  description: row.description
+  description: row.description,
+  folderId: row.folder_id ?? null
 })
 
 const blobToDataUrl = (blob: Blob): Promise<string> =>
@@ -57,8 +68,12 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob)
   })
 
-// 获取文件列表（当前用户的文件，按上传时间倒序）
-export const getFileList = async (): Promise<StorageResponse<StoredFileSummary[]>> => {
+// 获取文件列表
+// options.folderId：
+//   - 不传或 undefined：返回全部文件（兼容旧调用）
+//   - null：返回根目录文件（folder_id 为空）
+//   - 有值：返回该文件夹内的文件
+export const getFileList = async (options?: { folderId?: string | null }): Promise<StorageResponse<StoredFileSummary[]>> => {
   if (!isSupabaseConfigured) {
     return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
   }
@@ -69,11 +84,20 @@ export const getFileList = async (): Promise<StorageResponse<StoredFileSummary[]
       return { success: false, message: '用户未登录' }
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('files')
       .select('*')
       .eq('user_id', authData.user.id)
-      .order('upload_time', { ascending: false })
+
+    if (options?.folderId !== undefined) {
+      if (options.folderId === null) {
+        query = query.is('folder_id', null)
+      } else {
+        query = query.eq('folder_id', options.folderId)
+      }
+    }
+
+    const { data, error } = await query.order('upload_time', { ascending: false })
 
     if (error) throw error
 
@@ -139,6 +163,7 @@ export const uploadFile = async (payload: UploadPayload): Promise<StorageRespons
       file_size: payload.file.size,
       file_hash: fileHash,
       storage_path: storagePath,
+      folder_id: payload.folderId ?? null,
       description: payload.description || '',
       upload_time: new Date().toISOString(),
       status: 1,
@@ -248,5 +273,178 @@ export const downloadFile = async (
   } catch (error) {
     console.error('下载文件失败:', error)
     return { success: false, message: '文件下载失败' }
+  }
+}
+
+// ==================== 文件夹（用户自建目录） ====================
+
+// 获取指定父目录下的子文件夹（parentId 传 null 表示根目录）
+export const getFolderList = async (parentId: string | null): Promise<StorageResponse<Folder[]>> => {
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
+  }
+
+  try {
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData?.user) {
+      return { success: false, message: '用户未登录' }
+    }
+
+    let query = supabase
+      .from('folders')
+      .select('*')
+      .eq('user_id', authData.user.id)
+
+    if (parentId === null) {
+      query = query.is('parent_id', null)
+    } else {
+      query = query.eq('parent_id', parentId)
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: true })
+    if (error) throw error
+
+    return {
+      success: true,
+      data: (data || []).map((f: any) => ({
+        id: f.id,
+        name: f.name,
+        parentId: f.parent_id ?? null,
+        createdAt: f.created_at
+      }))
+    }
+  } catch (error) {
+    console.error('获取文件夹列表失败:', error)
+    return { success: false, message: '获取文件夹列表失败，请刷新页面重试' }
+  }
+}
+
+// 新建文件夹（同目录下重名时返回失败）
+export const createFolder = async (name: string, parentId: string | null): Promise<StorageResponse<Folder>> => {
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
+  }
+
+  const trimmed = (name || '').trim()
+  if (!trimmed) {
+    return { success: false, message: '文件夹名称不能为空' }
+  }
+  if (trimmed.length > 50) {
+    return { success: false, message: '文件夹名称最长 50 个字符' }
+  }
+  if (/[\\/:*?"<>|]/.test(trimmed)) {
+    return { success: false, message: '文件夹名称不能包含 \\ / : * ? " < > | 等字符' }
+  }
+
+  try {
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData?.user) {
+      return { success: false, message: '用户未登录' }
+    }
+
+    // 同目录查重
+    let dupQuery = supabase
+      .from('folders')
+      .select('id')
+      .eq('user_id', authData.user.id)
+      .eq('name', trimmed)
+    dupQuery =
+      parentId === null ? dupQuery.is('parent_id', null) : dupQuery.eq('parent_id', parentId)
+
+    const { data: dup } = await dupQuery.maybeSingle()
+    if (dup) {
+      return { success: false, message: '该目录下已存在同名文件夹' }
+    }
+
+    const { data, error } = await supabase
+      .from('folders')
+      .insert({ user_id: authData.user.id, name: trimmed, parent_id: parentId })
+      .select()
+      .single()
+    if (error) throw error
+
+    return {
+      success: true,
+      data: {
+        id: data.id,
+        name: data.name,
+        parentId: data.parent_id ?? null,
+        createdAt: data.created_at
+      }
+    }
+  } catch (error: any) {
+    console.error('新建文件夹失败:', error)
+    // 数据库唯一索引兜底
+    if (error?.code === '23505') {
+      return { success: false, message: '该目录下已存在同名文件夹' }
+    }
+    return { success: false, message: '新建文件夹失败，请稍后重试' }
+  }
+}
+
+// 删除文件夹：子文件夹级联删除，文件夹内的文件自动移回根目录（folder_id 置空，文件不丢失）
+export const deleteFolder = async (folderId: string): Promise<StorageResponse<null>> => {
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
+  }
+
+  try {
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData?.user) {
+      return { success: false, message: '用户未登录' }
+    }
+
+    const { error } = await supabase
+      .from('folders')
+      .delete()
+      .eq('id', folderId)
+      .eq('user_id', authData.user.id)
+    if (error) throw error
+
+    return { success: true }
+  } catch (error) {
+    console.error('删除文件夹失败:', error)
+    return { success: false, message: '删除文件夹失败，请稍后重试' }
+  }
+}
+
+// 获取文件夹的祖先链（用于面包屑），从根到当前文件夹
+export const getFolderPath = async (folderId: string): Promise<StorageResponse<Folder[]>> => {
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
+  }
+
+  try {
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData?.user) {
+      return { success: false, message: '用户未登录' }
+    }
+
+    const path: Folder[] = []
+    let currentId: string | null = folderId
+    let guard = 0
+
+    while (currentId && guard < 20) {
+      const { data, error } = await supabase
+        .from('folders')
+        .select('*')
+        .eq('id', currentId)
+        .eq('user_id', authData.user.id)
+        .maybeSingle()
+      if (error || !data) break
+      path.unshift({
+        id: data.id,
+        name: data.name,
+        parentId: data.parent_id ?? null,
+        createdAt: data.created_at
+      })
+      currentId = data.parent_id
+      guard++
+    }
+
+    return { success: true, data: path }
+  } catch (error) {
+    console.error('获取文件夹路径失败:', error)
+    return { success: false, message: '获取文件夹路径失败' }
   }
 }

@@ -1,5 +1,10 @@
 <template>
   <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
+    <!-- 上传目标文件夹 -->
+    <el-form-item label="上传到">
+      <el-tag type="primary" class="target-folder">📁 {{ props.folderName || '根目录' }}</el-tag>
+    </el-form-item>
+
     <el-form-item label="文件" prop="files">
       <el-upload
         class="upload-wrapper"
@@ -90,6 +95,12 @@ import { UploadFilled, Document, Close } from '@element-plus/icons-vue'
 import { uploadFile } from '@/api/storage'
 
 const emit = defineEmits(['success', 'cancel'])
+
+// 上传目标文件夹（来自 StorageView 当前所在目录）
+const props = defineProps<{
+  folderId?: string | null
+  folderName?: string
+}>()
 
 interface UploadFormState {
   description: string
@@ -254,7 +265,8 @@ const handleSubmit = async () => {
       try {
         const response = await uploadFile({
           file: file,
-          description: form.description
+          description: form.description,
+          folderId: props.folderId ?? null
         })
 
         if (response.success) {
@@ -316,6 +328,11 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
+.target-folder {
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .upload-wrapper {
   width: 100%;
 }
