@@ -232,7 +232,7 @@ export const downloadFile = async (
       .from('user-files')
       .download(file.storage_path)
     if (downloadError || !blob) {
-      return { success: false, message: '文件下载失败' }
+      return { success: false, message: `文件下载失败：${downloadError?.message || '未获取到文件内容'}` }
     }
 
     const content = await blobToDataUrl(blob)

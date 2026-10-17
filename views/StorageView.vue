@@ -153,9 +153,13 @@
         link.click()
         link.remove()
         window.URL.revokeObjectURL(url)
+      } else {
+        // 下载失败时展示具体原因（此前缺失该分支，失败时页面无任何提示）
+        ElMessage.error(response.message || '文件下载失败')
       }
-    } catch (error) {
-      ElMessage.error('文件下载失败')
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '文件下载失败'
+      ElMessage.error(message)
     }
   }
   
