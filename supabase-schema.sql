@@ -65,6 +65,11 @@ drop policy if exists "files_delete_own" on public.files;
 create policy "files_delete_own" on public.files
   for delete using (auth.uid() = user_id);
 
+-- 5. API 角色基础权限（PostgREST 以 anon / authenticated 角色访问，缺少则报 permission denied）
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.profiles to anon, authenticated;
+grant select, insert, update, delete on public.files to anon, authenticated;
+
 -- 4. 存储桶（对象存储，私有）
 insert into storage.buckets (id, name, public)
 values ('user-files', 'user-files', false)
