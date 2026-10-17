@@ -119,6 +119,9 @@
         window.dispatchEvent(new Event('auth-change'))
         ElMessage.success('登录成功')
         router.push('/storage')
+      } else {
+        // 登录失败时展示具体原因（此前缺失该分支，导致失败时页面无任何提示）
+        ElMessage.error(response.message || '登录失败，请检查用户名和密码')
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '登录失败，请检查用户名和密码'
