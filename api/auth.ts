@@ -1,4 +1,10 @@
-import CryptoJS from 'crypto-js'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+
+/**
+ * 认证数据层：基于 Supabase Auth + profiles 表
+ * 对外保持与原 localStorage 版本相同的函数签名和返回结构，
+ * 因此 LoginView / RegisterForm / ProfileView 无需改动。
+ */
 
 interface AuthPayload {
   username: string
@@ -11,7 +17,6 @@ interface StoredUser {
   id: string
   username: string
   nickname?: string
-  password: string
   publicKey?: string
   avatar: string
   role?: string
@@ -21,126 +26,9 @@ interface StoredUser {
 interface AuthResponse {
   success: boolean
   message?: string
-    data?: {
-      token: string
-      user: Pick<StoredUser, 'id' | 'username' | 'nickname' | 'publicKey' | 'avatar' | 'role'>
-    }
-}
-
-const USER_STORAGE_KEY = 'blockchain-storage-users'
-
-const readUsers = (): StoredUser[] => {
-  try {
-    const raw = localStorage.getItem(USER_STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as StoredUser[]) : []
-  } catch (error) {
-    console.warn('解析用户数据失败', error)
-    return []
-  }
-}
-
-const writeUsers = (users: StoredUser[]) => {
-  try {
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users))
-    // 确保数据写入成功
-    const verify = localStorage.getItem(USER_STORAGE_KEY)
-    if (!verify) {
-      console.error('用户数据写入失败：localStorage 可能已满或不可用')
-      throw new Error('用户数据保存失败，请检查浏览器存储空间')
-    }
-  } catch (error) {
-    console.error('保存用户数据到 localStorage 失败:', error)
-    throw new Error('用户数据保存失败，请检查浏览器存储空间或清除缓存后重试')
-  }
-}
-
-const generateId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID()
-  }
-  return 'user-' + Math.random().toString(36).slice(2, 10)
-}
-
-const hashPassword = (password: string) => {
-  return CryptoJS.SHA256(password).toString()
-}
-
-export const register = async (payload: AuthPayload): Promise<AuthResponse> => {
-  const users = readUsers()
-
-  const exists = users.some(user => user.username === payload.username)
-  if (exists) {
-    return {
-      success: false,
-      message: '用户名已存在，请更换用户名'
-    }
-  }
-
-  const newUser: StoredUser = {
-    id: generateId(),
-    username: payload.username,
-    nickname: payload.nickname || payload.username,
-    password: hashPassword(payload.password),
-    publicKey: payload.publicKey || '',
-    avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(payload.username)}`,
-    role: 'user',
-    createdAt: new Date().toISOString()
-  }
-
-  users.push(newUser)
-  writeUsers(users)
-
-  return {
-    success: true
-  }
-}
-
-export const login = async (payload: AuthPayload): Promise<AuthResponse> => {
-  const users = readUsers()
-  const user = users.find(item => item.username === payload.username)
-
-  if (!user) {
-    throw new Error('用户不存在，请先注册')
-  }
-
-  if (user.password !== hashPassword(payload.password)) {
-    throw new Error('密码错误，请重试')
-  }
-
-  // 登录时只需要验证用户名和密码，不需要公钥验证
-  // 公钥仅用于注册时的可选安全增强，不影响登录流程
-
-  const token = `token-${generateId()}-${Date.now()}`
-
-  // 确保返回完整的用户信息，包括所有个人信息字段
-  const userInfo = {
-    id: user.id,
-    username: user.username,
-    nickname: user.nickname || user.username,
-    publicKey: user.publicKey || '',
-    avatar: user.avatar,
-    role: user.role || 'user'
-  }
-
-  // 登录时立即保存用户信息到 localStorage，确保数据持久化
-  try {
-    localStorage.setItem('userInfo', JSON.stringify(userInfo))
-    // 验证保存成功
-    const verify = localStorage.getItem('userInfo')
-    if (!verify) {
-      console.error('用户信息保存失败：localStorage 可能已满或不可用')
-    }
-  } catch (error) {
-    console.error('保存用户信息到 localStorage 失败:', error)
-    // 即使保存失败也继续登录流程，但记录错误
-  }
-
-  return {
-    success: true,
-    data: {
-      token,
-      user: userInfo
-    }
+  data?: {
+    token: string
+    user: Pick<StoredUser, 'id' | 'username' | 'nickname' | 'publicKey' | 'avatar' | 'role'>
   }
 }
 
@@ -162,175 +50,288 @@ interface ChangePasswordPayload {
   newPassword: string
 }
 
-const getCurrentUser = (): StoredUser | null => {
-  try {
-    const raw = localStorage.getItem('userInfo')
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    const userId = parsed?.id
-    if (!userId) return null
+// 用户名 -> Supabase Auth 登录邮箱（Supabase 以邮箱作为登录标识）
+const AUTH_EMAIL_DOMAIN = 'users.local'
+const toAuthEmail = (username: string) => `${username}@${AUTH_EMAIL_DOMAIN}`
 
-    const users = readUsers()
-    return users.find(u => u.id === userId) || null
-  } catch (error) {
-    console.warn('获取当前用户失败', error)
+const defaultAvatar = (username: string) =>
+  `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(username)}`
+
+// 从 profiles 表读取用户资料
+const fetchProfile = async (userId: string): Promise<StoredUser | null> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) {
+    console.error('读取用户资料失败:', error)
     return null
   }
+  return data as StoredUser | null
 }
 
-export const getUserProfile = async (): Promise<ProfileResponse> => {
-  const user = getCurrentUser()
-  
-  if (!user) {
+// 组装返回给前端的安全用户对象
+const buildUserInfo = (user: StoredUser) => ({
+  id: user.id,
+  username: user.username,
+  nickname: user.nickname || user.username,
+  publicKey: user.publicKey || '',
+  avatar: user.avatar || defaultAvatar(user.username),
+  role: user.role || 'user'
+})
+
+// 注册（用户名 + 密码；用户名映射为唯一登录邮箱）
+export const register = async (payload: AuthPayload): Promise<AuthResponse> => {
+  if (!isSupabaseConfigured) {
     return {
       success: false,
-      message: '用户未登录或用户不存在'
+      message: 'Supabase 尚未配置，请在项目根目录 .env 中填写 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY'
     }
   }
 
-  return {
-    success: true,
-    data: {
-      id: user.id,
-      username: user.username,
-      nickname: user.nickname || user.username,
-      password: '', // 不返回密码
-      publicKey: user.publicKey,
-      avatar: user.avatar,
-      role: user.role || 'user',
-      createdAt: user.createdAt
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: toAuthEmail(payload.username),
+      password: payload.password,
+      options: {
+        data: {
+          username: payload.username,
+          nickname: payload.nickname || payload.username
+        }
+      }
+    })
+
+    if (error) throw error
+    if (!data.user) {
+      return { success: false, message: '注册失败，请稍后重试' }
     }
+
+    // 写入 profiles 表（用户资料）
+    const profile = {
+      id: data.user.id,
+      username: payload.username,
+      nickname: payload.nickname || payload.username,
+      publicKey: payload.publicKey || '',
+      avatar: defaultAvatar(payload.username),
+      role: 'user',
+      createdAt: new Date().toISOString()
+    }
+    const { error: profileError } = await supabase.from('profiles').upsert(profile)
+    if (profileError) {
+      console.error('写入用户资料失败:', profileError)
+      return { success: false, message: '注册成功但资料初始化失败，请稍后重试登录' }
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('注册错误:', error)
+    const msg = error?.message || ''
+    if (msg.includes('already registered') || msg.includes('已注册')) {
+      return { success: false, message: '用户名已存在，请更换用户名' }
+    }
+    if (msg.includes('at least 6')) {
+      return { success: false, message: '密码至少6位' }
+    }
+    return { success: false, message: '注册失败，请稍后重试' }
   }
 }
 
-export const updateUserProfile = async (payload: UpdateProfilePayload): Promise<ProfileResponse> => {
-  const user = getCurrentUser()
-  
-  if (!user) {
+// 登录（用户名 + 密码）
+export const login = async (payload: AuthPayload): Promise<AuthResponse> => {
+  if (!isSupabaseConfigured) {
     return {
       success: false,
-      message: '用户未登录或用户不存在'
+      message: 'Supabase 尚未配置，请在项目根目录 .env 中填写 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY'
     }
   }
 
-  const users = readUsers()
-  const userIndex = users.findIndex(u => u.id === user.id)
-  
-  if (userIndex === -1) {
-    return {
-      success: false,
-      message: '用户不存在'
-    }
-  }
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: toAuthEmail(payload.username),
+      password: payload.password
+    })
 
-  // 如果更新用户名，检查是否重复
-  if (payload.username && payload.username !== user.username) {
-    const exists = users.some(u => u.username === payload.username && u.id !== user.id)
-    if (exists) {
-      return {
-        success: false,
-        message: '用户名已存在，请更换用户名'
+    if (error) {
+      const msg = error.message || ''
+      if (msg.includes('Invalid login credentials')) {
+        return { success: false, message: '用户名或密码错误' }
+      }
+      if (msg.includes('Email not confirmed')) {
+        return { success: false, message: '注册邮箱尚未确认，请在 Supabase 后台关闭邮箱确认后重试' }
+      }
+      return { success: false, message: '登录失败，请检查用户名和密码' }
+    }
+
+    if (!data.session) {
+      return { success: false, message: '登录失败，未获取到会话' }
+    }
+
+    const user = await fetchProfile(data.user.id)
+    const userInfo = buildUserInfo(
+      user || {
+        id: data.user.id,
+        username: payload.username,
+        nickname: payload.username,
+        avatar: defaultAvatar(payload.username),
+        role: 'user',
+        createdAt: new Date().toISOString()
+      }
+    )
+
+    return {
+      success: true,
+      data: {
+        token: data.session.access_token,
+        user: userInfo
       }
     }
-    users[userIndex].username = payload.username
-    // 更新头像URL（如果用户名改变，使用新用户名生成头像）
-    if (!payload.avatar) {
-      users[userIndex].avatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(payload.username)}`
-    }
+  } catch (error) {
+    console.error('登录错误:', error)
+    return { success: false, message: '登录失败，请稍后重试' }
+  }
+}
+
+// 获取当前用户资料
+export const getUserProfile = async (): Promise<ProfileResponse> => {
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
   }
 
-  if (payload.nickname !== undefined) {
-    users[userIndex].nickname = payload.nickname || users[userIndex].username
-  }
-
-  if (payload.publicKey) {
-    users[userIndex].publicKey = payload.publicKey
-  }
-
-  if (payload.avatar) {
-    users[userIndex].avatar = payload.avatar
-  }
-
-  writeUsers(users)
-
-  // 更新 localStorage 中的用户信息，确保所有个人信息字段都被保存
-  const updatedUser = users[userIndex]
-  const storedUserInfo = {
-    id: updatedUser.id,
-    username: updatedUser.username,
-    nickname: updatedUser.nickname || updatedUser.username,
-    publicKey: updatedUser.publicKey || '',
-    avatar: updatedUser.avatar,
-    role: updatedUser.role || 'user'
-  }
-  
   try {
-    localStorage.setItem('userInfo', JSON.stringify(storedUserInfo))
-    // 验证保存成功
-    const verify = localStorage.getItem('userInfo')
-    if (!verify) {
-      console.error('用户信息更新失败：localStorage 可能已满或不可用')
-      throw new Error('用户信息保存失败，请检查浏览器存储空间')
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError || !authData?.user) {
+      return { success: false, message: '用户未登录或会话已过期' }
+    }
+
+    const profile = await fetchProfile(authData.user.id)
+    if (!profile) {
+      return { success: false, message: '用户不存在' }
+    }
+
+    return {
+      success: true,
+      data: {
+        id: profile.id,
+        username: profile.username,
+        nickname: profile.nickname || profile.username,
+        password: '',
+        publicKey: profile.publicKey || '',
+        avatar: profile.avatar || defaultAvatar(profile.username),
+        role: profile.role || 'user',
+        createdAt: profile.createdAt
+      }
     }
   } catch (error) {
-    console.error('保存用户信息到 localStorage 失败:', error)
-    throw new Error('用户信息保存失败，请检查浏览器存储空间或清除缓存后重试')
-  }
-
-  return {
-    success: true,
-    data: {
-      id: updatedUser.id,
-      username: updatedUser.username,
-      nickname: updatedUser.nickname || updatedUser.username,
-      password: '',
-      publicKey: updatedUser.publicKey,
-      avatar: updatedUser.avatar,
-      role: updatedUser.role || 'user',
-      createdAt: updatedUser.createdAt
-    }
+    console.error('获取用户信息失败:', error)
+    return { success: false, message: '获取用户信息失败' }
   }
 }
 
+// 更新用户资料（昵称 / 公钥 / 头像 / 用户名）
+export const updateUserProfile = async (payload: UpdateProfilePayload): Promise<ProfileResponse> => {
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
+  }
+
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError || !authData?.user) {
+      return { success: false, message: '用户未登录或用户不存在' }
+    }
+
+    // 若修改用户名，先检查是否被占用
+    if (payload.username) {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', payload.username)
+        .neq('id', authData.user.id)
+        .maybeSingle()
+      if (existing) {
+        return { success: false, message: '用户名已存在，请更换用户名' }
+      }
+    }
+
+    const updates: Record<string, unknown> = {}
+    if (payload.username !== undefined) updates.username = payload.username
+    if (payload.nickname !== undefined) updates.nickname = payload.nickname
+    if (payload.publicKey !== undefined) updates.publicKey = payload.publicKey
+    if (payload.avatar !== undefined) updates.avatar = payload.avatar
+
+    if (Object.keys(updates).length > 0) {
+      const { error } = await supabase.from('profiles').update(updates).eq('id', authData.user.id)
+      if (error) {
+        if ((error as any)?.code === '23505') {
+          return { success: false, message: '用户名已存在，请更换用户名' }
+        }
+        return { success: false, message: '更新失败，请稍后重试' }
+      }
+    }
+
+    const profile = await fetchProfile(authData.user.id)
+    if (!profile) {
+      return { success: false, message: '用户不存在' }
+    }
+
+    return {
+      success: true,
+      data: {
+        id: profile.id,
+        username: profile.username,
+        nickname: profile.nickname || profile.username,
+        password: '',
+        publicKey: profile.publicKey || '',
+        avatar: profile.avatar || defaultAvatar(profile.username),
+        role: profile.role || 'user',
+        createdAt: profile.createdAt
+      }
+    }
+  } catch (error) {
+    console.error('更新用户资料失败:', error)
+    return { success: false, message: '更新失败，请稍后重试' }
+  }
+}
+
+// 公开注册体系：登录页始终展示「立即注册」入口
 export const hasUsers = async (): Promise<boolean> => {
-  const users = readUsers()
-  return users.length > 0
+  return true
 }
 
+// 修改密码（先校验旧密码，再更新新密码）
 export const changePassword = async (payload: ChangePasswordPayload): Promise<{ success: boolean; message?: string }> => {
-  const user = getCurrentUser()
-  
-  if (!user) {
-    return {
-      success: false,
-      message: '用户未登录或用户不存在'
-    }
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
   }
 
-  // 验证旧密码
-  if (user.password !== hashPassword(payload.oldPassword)) {
-    return {
-      success: false,
-      message: '当前密码错误'
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError || !authData?.user) {
+      return { success: false, message: '用户未登录或用户不存在' }
     }
-  }
+    const email = authData.user.email || ''
 
-  const users = readUsers()
-  const userIndex = users.findIndex(u => u.id === user.id)
-  
-  if (userIndex === -1) {
-    return {
-      success: false,
-      message: '用户不存在'
+    // 校验旧密码：使用旧密码重新登录
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email,
+      password: payload.oldPassword
+    })
+    if (verifyError) {
+      return { success: false, message: '当前密码错误' }
     }
-  }
 
-  // 更新密码
-  users[userIndex].password = hashPassword(payload.newPassword)
-  writeUsers(users)
+    const { error: updateError } = await supabase.auth.updateUser({ password: payload.newPassword })
+    if (updateError) {
+      const msg = updateError.message || ''
+      if (msg.includes('at least 6')) {
+        return { success: false, message: '新密码至少6位' }
+      }
+      return { success: false, message: '密码修改失败，请稍后重试' }
+    }
 
-  return {
-    success: true,
-    message: '密码修改成功'
+    return { success: true, message: '密码修改成功' }
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    return { success: false, message: '密码修改失败，请稍后重试' }
   }
 }

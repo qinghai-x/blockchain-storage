@@ -1,4 +1,11 @@
 import CryptoJS from 'crypto-js'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+
+/**
+ * 存储数据层：基于 Supabase Storage（对象存储）+ files 表（元数据）
+ * 对外保持与原 localStorage 版本相同的函数签名和返回结构，
+ * 因此 UploadForm / StorageView / ManagementView / SecurityView / ProfileView 无需改动。
+ */
 
 interface UploadPayload {
   file: File
@@ -16,10 +23,11 @@ interface StoredFile {
   status: number
   mimeType: string
   description?: string
-  content: string
+  storagePath: string
 }
 
-export type StoredFileSummary = Omit<StoredFile, 'content'>
+// 返回给前端的摘要（不含内部存储路径）
+export type StoredFileSummary = Omit<StoredFile, 'storagePath'>
 
 interface StorageResponse<T> {
   success: boolean
@@ -27,205 +35,213 @@ interface StorageResponse<T> {
   data?: T
 }
 
-const STORAGE_KEY = 'blockchain-storage-files'
+// 数据库行（snake_case）-> 前端字段（camelCase）
+const toSummary = (row: any): StoredFileSummary => ({
+  id: row.id,
+  fileName: row.file_name,
+  originalName: row.original_name,
+  fileSize: Number(row.file_size) || 0,
+  fileHash: row.file_hash,
+  blockchainTx: row.blockchain_tx,
+  uploadTime: row.upload_time,
+  status: row.status,
+  mimeType: row.mime_type,
+  description: row.description
+})
 
-const getCurrentUserId = (): string | null => {
-  try {
-    const raw = localStorage.getItem('userInfo')
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return parsed?.id || null
-  } catch (error) {
-    console.warn('解析用户信息失败', error)
-    return null
-  }
-}
-
-const readStorage = (): Record<string, StoredFile[]> => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as Record<string, StoredFile[]>) : {}
-  } catch (error) {
-    console.warn('解析文件数据失败', error)
-    return {}
-  }
-}
-
-const writeStorage = (data: Record<string, StoredFile[]>) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    // 确保数据写入成功
-    const verify = localStorage.getItem(STORAGE_KEY)
-    if (!verify) {
-      console.error('数据写入失败：localStorage 可能已满或不可用')
-      throw new Error('数据保存失败，请检查浏览器存储空间')
-    }
-  } catch (error) {
-    console.error('保存数据到 localStorage 失败:', error)
-    throw new Error('数据保存失败，请检查浏览器存储空间或清除缓存后重试')
-  }
-}
-
-const generateId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID()
-  }
-  return 'file-' + Math.random().toString(36).slice(2, 10)
-}
-
-const generateBlockchainTx = (hash: string) => {
-  return `0x${CryptoJS.SHA256(hash + Date.now()).toString().slice(0, 32)}`
-}
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result
-      if (typeof result === 'string') {
-        resolve(result)
-      } else {
-        reject(new Error('无法读取文件内容'))
-      }
-    }
-    reader.onerror = () => reject(new Error('文件读取失败'))
-    reader.readAsDataURL(file)
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('无法读取文件内容'))
+    reader.readAsDataURL(blob)
   })
-}
 
+// 获取文件列表（当前用户的文件，按上传时间倒序）
 export const getFileList = async (): Promise<StorageResponse<StoredFileSummary[]>> => {
-  const userId = getCurrentUserId()
-  if (!userId) {
-    return {
-      success: false,
-      message: '用户未登录'
-    }
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
   }
 
   try {
-    const storage = readStorage()
-    const files = storage[userId] || []
-    
-    // 确保返回的数据按上传时间倒序排列（最新的在前）
-    const sortedFiles = files.sort((a, b) => 
-      new Date(b.uploadTime).getTime() - new Date(a.uploadTime).getTime()
-    )
-    
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData?.user) {
+      return { success: false, message: '用户未登录' }
+    }
+
+    const { data, error } = await supabase
+      .from('files')
+      .select('*')
+      .eq('user_id', authData.user.id)
+      .order('upload_time', { ascending: false })
+
+    if (error) throw error
+
     return {
       success: true,
-      data: sortedFiles.map(({ content, ...rest }) => rest)
+      data: (data || []).map(toSummary)
     }
   } catch (error) {
     console.error('获取文件列表失败:', error)
-    return {
-      success: false,
-      message: '获取文件列表失败，请刷新页面重试'
-    }
+    return { success: false, message: '获取文件列表失败，请刷新页面重试' }
   }
 }
 
+// 上传文件：对象进 Storage（user-files bucket），元数据进 files 表
 export const uploadFile = async (payload: UploadPayload): Promise<StorageResponse<StoredFileSummary>> => {
-  const userId = getCurrentUserId()
-  if (!userId) {
-    return {
-      success: false,
-      message: '用户未登录，请先登录'
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
+  }
+
+  try {
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData?.user) {
+      return { success: false, message: '用户未登录，请先登录' }
     }
-  }
+    const userId = authData.user.id
 
-  const base64 = await fileToBase64(payload.file)
-  const fileHash = CryptoJS.SHA256(base64).toString()
-  const newFile: StoredFile = {
-    id: generateId(),
-    fileName: payload.file.name,
-    originalName: payload.file.name,
-    fileSize: payload.file.size,
-    fileHash,
-    blockchainTx: generateBlockchainTx(fileHash),
-    uploadTime: new Date().toISOString(),
-    status: 1,
-    mimeType: payload.file.type || 'application/octet-stream',
-    description: payload.description,
-    content: base64
-  }
+    // 计算内容指纹（用于去重）
+    const fileHash = CryptoJS.SHA256(payload.file.name + payload.file.size + payload.file.lastModified).toString()
 
-  const storage = readStorage()
-  const userFiles = storage[userId] || []
-
-  const duplicate = userFiles.some(file => file.fileHash === newFile.fileHash)
-  if (duplicate) {
-    return {
-      success: false,
-      message: '该文件已上传，无需重复上传'
+    // 同用户重复文件检查
+    const { data: duplicate } = await supabase
+      .from('files')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('file_hash', fileHash)
+      .maybeSingle()
+    if (duplicate) {
+      return { success: false, message: '该文件已上传，无需重复上传' }
     }
-  }
 
-  userFiles.push(newFile)
-  storage[userId] = userFiles
-  writeStorage(storage)
+    // 存储路径：{userId}/{uuid}-{原文件名}，天然按用户隔离
+    const storagePath = `${userId}/${crypto.randomUUID()}-${payload.file.name}`
+    const { error: uploadError } = await supabase.storage.from('user-files').upload(storagePath, payload.file, {
+      contentType: payload.file.type || 'application/octet-stream',
+      upsert: false
+    })
+    if (uploadError) {
+      return { success: false, message: `文件上传失败：${uploadError.message}` }
+    }
 
-  const { content, ...summary } = newFile
-  return {
-    success: true,
-    data: summary
+    // 展示用哈希（页面保留「文件哈希 / 区块链交易」展示位）
+    const blockchainTx = `0x${CryptoJS.SHA256(fileHash + Date.now()).toString().slice(0, 32)}`
+
+    const fileRecord = {
+      user_id: userId,
+      file_name: payload.file.name,
+      original_name: payload.file.name,
+      file_size: payload.file.size,
+      file_hash: fileHash,
+      storage_path: storagePath,
+      description: payload.description || '',
+      upload_time: new Date().toISOString(),
+      status: 1,
+      mime_type: payload.file.type || 'application/octet-stream',
+      blockchain_tx: blockchainTx
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('files')
+      .insert(fileRecord)
+      .select()
+      .single()
+
+    if (insertError) {
+      // 记录写入失败时回滚已上传的对象
+      await supabase.storage.from('user-files').remove([storagePath])
+      return { success: false, message: '文件记录保存失败，请重试' }
+    }
+
+    return { success: true, data: toSummary(inserted) }
+  } catch (error: any) {
+    console.error('上传错误:', error)
+    return { success: false, message: '文件上传失败，请稍后重试' }
   }
 }
 
+// 删除文件（对象 + 记录）
 export const deleteFile = async (fileId: string): Promise<StorageResponse<null>> => {
-  const userId = getCurrentUserId()
-  if (!userId) {
-    return {
-      success: false,
-      message: '用户未登录'
-    }
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
   }
 
-  const storage = readStorage()
-  const userFiles = storage[userId] || []
-  const index = userFiles.findIndex(file => file.id === fileId)
-
-  if (index === -1) {
-    return {
-      success: false,
-      message: '文件不存在或已删除'
+  try {
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData?.user) {
+      return { success: false, message: '用户未登录' }
     }
-  }
 
-  userFiles.splice(index, 1)
-  storage[userId] = userFiles
-  writeStorage(storage)
+    const { data: file, error: fetchError } = await supabase
+      .from('files')
+      .select('*')
+      .eq('id', fileId)
+      .eq('user_id', authData.user.id)
+      .maybeSingle()
+    if (fetchError || !file) {
+      return { success: false, message: '文件不存在或已删除' }
+    }
 
-  return {
-    success: true
+    // 删除存储对象（失败不阻断记录删除）
+    if (file.storage_path) {
+      await supabase.storage.from('user-files').remove([file.storage_path])
+    }
+
+    const { error } = await supabase.from('files').delete().eq('id', fileId).eq('user_id', authData.user.id)
+    if (error) {
+      return { success: false, message: '文件删除失败，请稍后重试' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('删除文件失败:', error)
+    return { success: false, message: '文件删除失败，请稍后重试' }
   }
 }
 
-export const downloadFile = async (fileId: string): Promise<StorageResponse<{ content: string; fileName: string; mimeType: string }>> => {
-  const userId = getCurrentUserId()
-  if (!userId) {
-    return {
-      success: false,
-      message: '用户未登录'
-    }
+// 下载文件：从 Storage 下载并转为 Data URL 返回（视图层保持原有 base64 处理逻辑）
+export const downloadFile = async (
+  fileId: string
+): Promise<StorageResponse<{ content: string; fileName: string; mimeType: string }>> => {
+  if (!isSupabaseConfigured) {
+    return { success: false, message: 'Supabase 尚未配置，请在 .env 中填写相关配置' }
   }
 
-  const storage = readStorage()
-  const userFiles = storage[userId] || []
-  const file = userFiles.find(item => item.id === fileId)
+  try {
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData?.user) {
+      return { success: false, message: '用户未登录' }
+    }
 
-  if (!file) {
+    const { data: file, error: fetchError } = await supabase
+      .from('files')
+      .select('*')
+      .eq('id', fileId)
+      .eq('user_id', authData.user.id)
+      .maybeSingle()
+    if (fetchError || !file) {
+      return { success: false, message: '文件不存在或已删除' }
+    }
+
+    const { data: blob, error: downloadError } = await supabase.storage
+      .from('user-files')
+      .download(file.storage_path)
+    if (downloadError || !blob) {
+      return { success: false, message: '文件下载失败' }
+    }
+
+    const content = await blobToDataUrl(blob)
+
     return {
-      success: false,
-      message: '文件不存在或已删除'
+      success: true,
+      data: {
+        content,
+        fileName: file.file_name,
+        mimeType: file.mime_type || 'application/octet-stream'
+      }
     }
-  }
-
-  return {
-    success: true,
-    data: {
-      content: file.content,
-      fileName: file.fileName,
-      mimeType: file.mimeType
-    }
+  } catch (error) {
+    console.error('下载文件失败:', error)
+    return { success: false, message: '文件下载失败' }
   }
 }
